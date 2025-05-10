@@ -5,15 +5,16 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginSuccess?: () => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const { publicKey } = useWallet();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!publicKey || !username) return;
+    if (!publicKey || !username.trim()) return;
 
     try {
       const response = await fetch('http://localhost:3000/create-user', {
@@ -22,18 +23,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username,
+          username: username.trim(),
           walletAddress: publicKey.toString(),
         }),
       });
 
       if (response.ok) {
+        onLoginSuccess?.();
         onClose();
-        // You might want to add some success feedback here
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      // Handle error appropriately
     }
   };
 
@@ -58,22 +58,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
               required
             />
           </div>
-          <div className="flex justify-end gap-4">
-            <div className='flex mr-auto'>
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex-shrink-0">
               <WalletMultiButton />
             </div>
-            <button
+            {/* <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-gray-300 hover:text-white"
             >
               Cancel
-            </button>
+            </button> */}
             <button
               type="submit"
-              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20"
+              disabled={!username.trim()}
+              className={`px-4 py-2 rounded-lg text-white transition-all duration-300 ${!username.trim()
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/20'
+                }`}
             >
-              Login
+              Complete Setup
             </button>
           </div>
         </form>

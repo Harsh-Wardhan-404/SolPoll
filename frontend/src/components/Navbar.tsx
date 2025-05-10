@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, Menu, X, ChevronDown } from 'lucide-react';
+import { Wallet, Menu, X, ChevronDown, LogOut } from 'lucide-react';
 import AppWalletProvider from './AppWalletProvider';
 import {
   WalletModalProvider,
@@ -13,6 +13,7 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { publicKey } = useWallet();
 
   useEffect(() => {
@@ -27,26 +28,34 @@ const Navbar = () => {
   useEffect(() => {
     if (publicKey) {
       // Check if user exists
-      console.log(publicKey.toString());
       const checkUser = async () => {
         try {
           const response = await fetch(`http://localhost:3000/users/${publicKey.toString()}`);
-          if (!response.ok) {
+          if (response.ok) {
+            setIsLoggedIn(true);
+            setShowLoginModal(false);
+          } else {
             setShowLoginModal(true);
+            setIsLoggedIn(false);
           }
         } catch (error) {
           console.error('Error checking user:', error);
         }
       };
       checkUser();
+    } else {
+      setIsLoggedIn(false);
     }
   }, [publicKey]);
 
-  return (
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    // The wallet disconnect will be handled by the WalletDisconnectButton
+  };
 
+  return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-gray-900/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
-        }`}
+      className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-gray-900/95 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
@@ -59,7 +68,6 @@ const Navbar = () => {
                 SolPoll
               </span>
             </div>
-
           </div>
 
           {/* Desktop Navigation */}
@@ -69,16 +77,23 @@ const Navbar = () => {
             <NavLink href="#">Create</NavLink>
             <NavLink href="#">About</NavLink>
 
-            {/* <button className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 flex items-center gap-2">
+            {isLoggedIn ? (
+              <div className="flex items-center gap-4">
+                <WalletDisconnectButton className="!bg-red-500 !text-white hover:!bg-red-600 transition-colors duration-300 rounded-lg px-4 py-2 font-semibold shadow-md" />
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 flex items-center gap-2"
+              >
                 <Wallet size={18} />
-                Connect Wallet
-              </button> */}
-            <button onClick={() => setShowLoginModal(true)}>Login</button>
+                Login
+              </button>
+            )}
             <LoginModal
               isOpen={showLoginModal}
               onClose={() => setShowLoginModal(false)}
             />
-
           </nav>
 
           {/* Mobile menu button */}
@@ -102,18 +117,22 @@ const Navbar = () => {
             <MobileNavLink href="#">Create</MobileNavLink>
             <MobileNavLink href="#">About</MobileNavLink>
 
-            {/* <button className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 flex items-center justify-center gap-2">
+            {isLoggedIn ? (
+              <WalletDisconnectButton className="w-full mt-4 !bg-red-500 !text-white hover:!bg-red-600 transition-colors duration-300 rounded-lg px-4 py-2 font-semibold shadow-md" />
+            ) : (
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 flex items-center justify-center gap-2"
+              >
                 <Wallet size={18} />
-                Connect Wallet
-              </button> */}
-            <WalletMultiButton className="bg-[#13ADB7] text-white hover:bg-[#0D98A6] transition-colors duration-300 rounded-lg px-4 py-2 font-semibold shadow-md" />
+                Login
+              </button>
+            )}
           </div>
         </div>
       )}
-
     </header>
   );
-
 };
 
 const NavLink = ({ href, children }: { href: string, children: React.ReactNode }) => (
